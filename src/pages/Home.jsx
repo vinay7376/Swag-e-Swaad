@@ -56,9 +56,9 @@ export default function Home() {
         <div className="cat-pill">🍔 Burgers</div>
         <div className="cat-pill">🥗 Salads</div>
         <div className="cat-pill">🥘 Indian</div>
-        <div className="cat-pill">🍛 Rice</div>
+       
         <div className="cat-pill">🍟 Snacks</div>
-        <div className="cat-pill">🥤 Drinks</div>
+       
         <div className="cat-pill">🍝 Pasta</div>
       </section>
     </>

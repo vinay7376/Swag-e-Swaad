@@ -12,7 +12,7 @@ export default function CartItem({ item, qty, unitPrice, subtitle, onIncrease, o
         {subtitle && <p className="muted" style={{ margin: 0 }}>{subtitle}</p>}
 
         <div className="cart-actions">
-          <div className="qty-controls">
+          <div className=" btn btn-ghost qty-controls">
             <button onClick={() => onDecrease(variantKey)}>-</button>
             <span>{qty}</span>
             <button onClick={() => onIncrease(variantKey)}>+</button>

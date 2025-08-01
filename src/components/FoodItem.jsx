@@ -80,9 +80,9 @@ function FoodItem({
                   <span>In cart: {inCartQty}</span>
                 </div>
               ) : (
-                <button className="primary" onClick={handleAdd}>Quick Add</button>
+                <button className="prime" onClick={handleAdd}>Quick Add</button>
               )}
-              <button className="ghost" onClick={() => setOpen(true)}>Customize</button>
+              <button className="coustomizes" onClick={() => setOpen(true)}>Customize</button>
             </div>
           </div>
         </div>

@@ -93,9 +93,9 @@ export default function CustomizeModal({ open, onClose, item, onConfirm }) {
 
           <div className="modal-footer">
             <div className="price-preview">Price: <strong>₹{unitPrice}</strong></div>
-            <div className="actions">
-              <button className="ghost" onClick={onClose}>Cancel</button>
-              <button className="primary" onClick={submit}>Add to Cart</button>
+            <div className="actions"style={{ display: 'flex', gap: '12px', marginTop: '10px' }}>
+              <button className="btn-ghoest" onClick={onClose}>Cancel</button>
+              <button className="btn-custom" onClick={submit}>Add to Cart</button>
             </div>
           </div>
         </div>

@@ -6,7 +6,7 @@ import {
   useLocation,
   Navigate,
 } from "react-router-dom";
-
+import foodItems from "./data/foodItems";
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 
@@ -206,6 +206,7 @@ export default function App() {
               <RequireAuth user={user}>
                 <Favorites
                   favIds={Object.keys(favs).map(Number)}
+                  allItems={foodItems}
                   getQtyForId={getQtyForId}
                   addToCart={addToCart}
                   addConfiguredToCart={addConfiguredToCart}
