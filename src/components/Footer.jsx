@@ -38,7 +38,7 @@ const Footer = () => {
 
         {/* Copyright */}
         <div className="footer-copy">
-          © {new Date().getFullYear()} FoodieZone. All rights reserved.
+          © {new Date().getFullYear()} Swag-e-Swaad. All rights reserved.
         </div>
       </div>
     </footer>

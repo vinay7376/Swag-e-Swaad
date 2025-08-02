@@ -39,7 +39,7 @@ export default function Signup({ onSignup }) {
     <div className="auth-page container">
       <div className="auth-card">
         <h2>Create account</h2>
-        <p className="muted">Join FoodieZone to order faster.</p>
+        <p className="muted">Join Swag-e-Swaad to order faster.</p>
         <form onSubmit={submit} className="auth-form">
           <label>Name</label>
           <input className="input" type="text" placeholder="Jane Doe" value={name} onChange={(e) => setName(e.target.value)} />
