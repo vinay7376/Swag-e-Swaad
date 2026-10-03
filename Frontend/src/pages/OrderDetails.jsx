@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { api } from "../services/api";
+import { getStatusBadge } from "./Orders";
 
 export default function OrderDetails() {
   const { id } = useParams();
@@ -81,6 +82,8 @@ export default function OrderDetails() {
     return null;
   }
 
+  const badge = getStatusBadge(order.status);
+
   return (
     <div
       className="container"
@@ -123,19 +126,12 @@ export default function OrderDetails() {
           marginBottom: 20,
         }}
       >
-        <div className="row">
+        <div className="row" style={{ alignItems: "center" }}>
           <span>Status</span>
-
-          <strong
-            style={{
-              textTransform: "capitalize",
-            }}
-          >
-            {order.status.replaceAll(
-              "_",
-              " "
-            )}
-          </strong>
+          <div className={badge.className}>
+            <span className="status-pill-icon">{badge.icon}</span>
+            <span className="status-pill-text">{badge.label}</span>
+          </div>
         </div>
 
         <div className="row">

@@ -1,17 +1,7 @@
 import React, { useState } from "react";
 import { useToast } from "./Toast";
 import CustomizeModal from "./CustomizeModal";
-
-function Stars({ value }) {
-  const full = Math.floor(value);
-  const half = value - full >= 0.5;
-  const arr = Array.from({ length: 5 }, (_, i) => {
-    if (i < full) return "★";
-    if (i === full && half) return "☆";
-    return "☆";
-  });
-  return <span aria-label={`Rating ${value}`}> {arr.join(" ")} </span>;
-}
+import { Star, SlidersHorizontal, Plus, Heart, Flame } from "lucide-react";
 
 function FoodItem({
   item,
@@ -28,7 +18,7 @@ function FoodItem({
 
   const handleAdd = () => {
     onAdd(item);
-    push({ message: `Added ${item.name} (M) to cart`, variant: "success" });
+    push({ message: `Added ${item.name} to cart`, variant: "success" });
   };
 
   const fav = isFav ? isFav(item._id) : false;
@@ -41,13 +31,35 @@ function FoodItem({
     push({ message: `Added ${item.name} (${size})${addonsTxt}`, variant: "success" });
   };
 
+  // Determine highlight tag (Bestseller, Chef's Special, etc.)
+  const specialTag = item.tags?.find((t) =>
+    ["Bestseller", "Chef's Special", "Popular", "Spicy"].includes(t)
+  );
+
   return (
     <>
-      <div className="food-card hoverable">
+      <div className={`food-card modern-food-card ${!item.isAvailable ? "unavailable" : ""}`}>
+        {/* Media / Image Container */}
         <div className="card-media">
-          <img loading="lazy" src={item.image} alt={item.name} />
-          {item.tags?.length > 0 && <div className="ribbon">{item.tags[0]}</div>}
+          <img
+            loading="lazy"
+            src={item.image}
+            alt={item.name}
+            onError={(e) => {
+              e.target.onerror = null;
+              e.target.src = "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=600&auto=format&fit=crop&q=80";
+            }}
+          />
 
+          {/* Special badge tag (top-left) */}
+          {specialTag && (
+            <div className={`badge-pill ${specialTag === "Bestseller" ? "pill-bestseller" : "pill-special"}`}>
+              {specialTag === "Bestseller" && <Flame size={12} />}
+              {specialTag}
+            </div>
+          )}
+
+          {/* Favorite button (top-right) */}
           {onToggleFav && (
             <button
               className={`fav-btn ${fav ? "active" : ""}`}
@@ -58,32 +70,71 @@ function FoodItem({
               aria-label={fav ? "Remove from favorites" : "Add to favorites"}
               title={fav ? "Remove from favorites" : "Add to favorites"}
             >
-              {fav ? "❤️" : "🤍"}
+              <Heart size={16} fill={fav ? "#ef4444" : "none"} color={fav ? "#ef4444" : "currentColor"} />
             </button>
           )}
+
+          {/* Rating floating pill */}
+          <div className="card-rating-pill">
+            <Star size={13} fill="#f59e0b" color="#f59e0b" />
+            <span>{Number(item.rating || 4.5).toFixed(1)}</span>
+          </div>
         </div>
 
+        {/* Food Content */}
         <div className="food-content">
-          <h3>{item.name}</h3>
-          <p className="muted">
-            {item.category} • {item.isVeg ? "🌱 Veg" : "🍗 Non-Veg"} •{" "}
-            <Stars value={item.rating} />
-          </p>
-          {!item.isAvailable && <p className="muted">Currently unavailable</p>}
+          <div className="food-header-row">
+            {/* Swiggy/Zomato style Veg / Non-Veg Indicator */}
+            <div className={`diet-indicator ${item.isVeg ? "diet-veg" : "diet-nonveg"}`} title={item.isVeg ? "Pure Veg" : "Non-Veg"}>
+              <span className="diet-dot" />
+            </div>
 
-          <div className="food-footer">
-            <span className="price">₹{item.price}</span>
+            <span className="food-category-tag">{item.category}</span>
+          </div>
 
-            <div style={{ display: "flex", gap: 8 }}>
+          <h3 className="food-name" title={item.name}>{item.name}</h3>
+
+          {item.description && (
+            <p className="food-desc">{item.description}</p>
+          )}
+
+          {!item.isAvailable && (
+            <span className="badge-unavailable">Currently Sold Out</span>
+          )}
+
+          {/* Footer: Price & Actions */}
+          <div className="food-card-bottom">
+            <div className="price-block">
+              <span className="currency-symbol">₹</span>
+              <span className="price-amount">{item.price}</span>
+            </div>
+
+            <div className="card-btn-group">
               {inCartQty > 0 ? (
-                <div className="qty-controls">
-                  {/* NOTE: variant-aware qty buttons are on Cart page; here we show total qty only */}
+                <div className="in-cart-indicator">
                   <span>In cart: {inCartQty}</span>
                 </div>
               ) : (
-                <button className="prime" onClick={handleAdd} disabled={!item.isAvailable}>Quick Add</button>
+                <button
+                  className="btn-quick-add"
+                  onClick={handleAdd}
+                  disabled={!item.isAvailable}
+                  title="Add to cart"
+                >
+                  <Plus size={15} />
+                  <span>Add</span>
+                </button>
               )}
-              <button className="coustomizes" onClick={() => setOpen(true)} disabled={!item.isAvailable}>Customize</button>
+
+              <button
+                className="btn-customize"
+                onClick={() => setOpen(true)}
+                disabled={!item.isAvailable}
+                title="Customize size & toppings"
+              >
+                <SlidersHorizontal size={14} />
+                <span>Custom</span>
+              </button>
             </div>
           </div>
         </div>

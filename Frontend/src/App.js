@@ -141,7 +141,16 @@ function AppContent() {
         onLogout={logout}
       />
       <Routes>
-        <Route path="/" element={<Home />} />
+        <Route
+          path="/"
+          element={
+            <Home
+              foods={foods}
+              addToCart={(item) => addConfiguredToCart(item, { size: "M", addons: [] })}
+              getQtyForId={getQtyForId}
+            />
+          }
+        />
         <Route
           path="/menu"
           element={
