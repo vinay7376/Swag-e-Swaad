@@ -19,8 +19,13 @@
 
 ## ✨ Features
 
+- **🤖 AI-Powered Food Concierge & Recommendations**:
+  - Global interactive AI assistant (powered by `/api/ai/chat` and `/api/ai/recommend`).
+  - Natural language dish discovery based on mood (spicy, comfort, sweet, healthy, party).
+  - Intelligent cart-based dish pairings with 1-click "Add to Cart" directly from the AI chat.
 - **🔐 Authentication & Security**:
   - Secure JWT authentication with HTTP Bearer token headers.
+  - Interactive password visibility toggles (`Eye` / `EyeOff`) across Login, Signup, and Reset Password forms.
   - Salted bcrypt password hashing (10/12 rounds).
   - User registration, login, profile updates, and in-app password changes.
   - End-to-end verified Forgot Password & Reset Password flows.
@@ -30,7 +35,7 @@
   - Favorites wishlist with user association.
 - **🛒 Dynamic Cart & Checkout**:
   - Variant-aware multi-item cart storage with localStorage persistence.
-  - Responsive two-column food delivery style checkout layout.
+  - Clean two-column food delivery checkout layout with item thumbnails, Veg/Non-Veg indicators, and quantity steppers.
   - Coupon discount engine:
     - `SAVE10`: 10% off subtotal
     - `FLAT50`: ₹50 flat discount
@@ -41,6 +46,7 @@
   - **Online Payment**: Official Razorpay Checkout integration with server-side HMAC SHA-256 signature verification.
   - **Built-in Payment Simulator Mode**: Allows seamless online payment testing in local development without requiring an active Razorpay merchant account.
 - **📦 Order Management & Live Tracking**:
+  - Celebratory order confirmation banner upon placing orders.
   - Tamper-proof server-side order calculation and item pricing snapshots.
   - Real-time order progress timeline: `Pending` → `Confirmed` → `Preparing` → `Out for Delivery` → `Delivered`.
   - Self-service order cancellation for pending/confirmed orders.
@@ -139,6 +145,8 @@ Frontend will automatically launch at `http://localhost:3000` (or `3001`).
 | `GET` | `/api/orders/my-orders` | Private | Retrieve user's order history |
 | `GET` | `/api/orders/:id` | Private | View single order with status timeline |
 | `PATCH`| `/api/orders/:id/cancel` | Private | Cancel pending/confirmed order |
+| `POST` | `/api/ai/chat` | Public | AI Food Concierge recommendation chat |
+| `POST` | `/api/ai/recommend` | Public | Contextual cart dish pairings |
 | `GET` | `/api/admin/dashboard` | Admin | Aggregate sales & revenue dashboard |
 | `GET` | `/api/orders/admin/all` | Admin | View all system orders |
 | `PATCH`| `/api/orders/:id/status` | Admin | Advance order lifecycle status |
