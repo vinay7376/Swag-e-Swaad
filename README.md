@@ -1,87 +1,150 @@
-# Swag-e-Swaad
+# 🍽️ Swag-e-Swaad — Full-Stack Food Ordering Platform
 
-Swag-e-Swaad is a full-stack food ordering platform for browsing a live menu, configuring dishes, placing cash-on-delivery or Razorpay test payments, and managing orders. It includes a role-protected admin dashboard for operational management.
+[![React](https://img.shields.io/badge/Frontend-React%2019-blue?logo=react)](https://react.dev/)
+[![Express](https://img.shields.io/badge/Backend-Express%205-black?logo=express)](https://expressjs.com/)
+[![MongoDB](https://img.shields.io/badge/Database-MongoDB%20Atlas-green?logo=mongodb)](https://www.mongodb.com/)
+[![Vercel](https://img.shields.io/badge/Frontend%20Host-Vercel-black?logo=vercel)](https://swag-e-swaad.vercel.app)
+[![Render](https://img.shields.io/badge/Backend%20Host-Render-blueviolet?logo=render)](https://swag-e-swaad.onrender.com)
 
-## Features
+**Swag-e-Swaad** is a modern full-stack MERN food delivery web application featuring dynamic dish customization, multi-factor cart calculations, coupon discount engines, Cash on Delivery (COD), Razorpay online payment integration with a development simulator, live order tracking, and a role-protected admin dashboard.
 
-- JWT authentication, secure password hashing, profile updates, and password changes
-- Menu search/filtering, favourites, persistent variant-aware cart, coupons, and availability checks
-- Backend-calculated order pricing: subtotal, discount, delivery, tax, and immutable item snapshots
-- COD and Razorpay test-mode checkout with server-side signature verification
-- Order history, details, cancellation, and status timeline data
-- Admin dashboard, order workflow, food APIs, and user list
-- Responsive React UI with theme, loading, empty, and error states
+---
 
-## Stack and architecture
+## 🌐 Live Deployments
 
-React (Create React App) talks to an Express REST API. Express uses MongoDB/Mongoose for users, foods, and orders. JWT authenticates users; role middleware protects admin endpoints. Razorpay credentials are only used by the backend.
+- **Frontend (Vercel)**: [https://swag-e-swaad.vercel.app](https://swag-e-swaad.vercel.app)
+- **Backend API (Render)**: [https://swag-e-swaad.onrender.com](https://swag-e-swaad.onrender.com)
+
+---
+
+## ✨ Features
+
+- **🔐 Authentication & Security**:
+  - Secure JWT authentication with HTTP Bearer token headers.
+  - Salted bcrypt password hashing (10/12 rounds).
+  - User registration, login, profile updates, and in-app password changes.
+  - End-to-end verified Forgot Password & Reset Password flows.
+- **🍕 Menu & Catalog**:
+  - Live dishes catalog with category filters, Veg/Non-Veg toggles, min ratings, and price range sliders.
+  - Dish customization modal: Size selection (`S` 1.0x, `M` 1.2x, `L` 1.5x) and add-ons (`Extra Cheese`, `Extra Toppings`, `Extra Spicy`).
+  - Favorites wishlist with user association.
+- **🛒 Dynamic Cart & Checkout**:
+  - Variant-aware multi-item cart storage with localStorage persistence.
+  - Responsive two-column food delivery style checkout layout.
+  - Coupon discount engine:
+    - `SAVE10`: 10% off subtotal
+    - `FLAT50`: ₹50 flat discount
+    - `FREESHIP`: Free delivery fee
+  - Address validation (10–500 characters) and address prefill from user profile.
+- **💳 Dual Payment System**:
+  - **Cash on Delivery (COD)**: Instant order creation and confirmation.
+  - **Online Payment**: Official Razorpay Checkout integration with server-side HMAC SHA-256 signature verification.
+  - **Built-in Payment Simulator Mode**: Allows seamless online payment testing in local development without requiring an active Razorpay merchant account.
+- **📦 Order Management & Live Tracking**:
+  - Tamper-proof server-side order calculation and item pricing snapshots.
+  - Real-time order progress timeline: `Pending` → `Confirmed` → `Preparing` → `Out for Delivery` → `Delivered`.
+  - Self-service order cancellation for pending/confirmed orders.
+- **🛠️ Role-Protected Admin Dashboard**:
+  - Operational metrics: Daily orders, total revenue, delivered/cancelled statistics.
+  - Food catalog management: Add new dishes or delete items.
+  - Order status workflow updater.
+  - User management with order history counts.
+
+---
+
+## 🏛️ Architecture & Directory Structure
 
 ```
-Frontend/src/       React pages, components, and API client
-Backend/models/     User, Food, and immutable Order snapshots
-Backend/controllers REST application logic
-Backend/middleware  authentication, authorization, and error handling
-Backend/utils/      coupons and shared backend rules
+food-ordering/
+├── Backend/
+│   ├── config/          # Database connection (MongoDB Atlas / Local)
+│   ├── controllers/     # Route logic (auth, food, order, admin)
+│   ├── middleware/      # JWT protect, admin role check, error handlers
+│   ├── models/          # Mongoose schemas (User, Food, Order)
+│   ├── routes/          # Express route definitions
+│   ├── utils/           # Coupon rules and calculation helpers
+│   ├── seedFoods.js     # Database seeder script
+│   └── server.js        # Express server entry point with dynamic CORS
+│
+└── Frontend/
+    ├── public/          # HTML index, manifests, and dish asset graphics
+    └── src/
+        ├── components/  # Navbar, Footer, FoodItem, CartItem, CustomizeModal, Toast
+        ├── pages/       # Home, Menu, Cart, Orders, OrderDetails, Profile, Admin, Auth
+        ├── services/    # Centralized api.js client with dynamic base URL
+        └── App.css      # Custom modern responsive styling & design tokens
 ```
 
-## Setup
+---
 
-1. Install MongoDB locally or create an Atlas database.
-2. Copy `Backend/.env.example` to `Backend/.env` and set `MONGODB_URI` and a long random `JWT_SECRET`.
-3. For online payments, add Razorpay **test** keys to the same file.
+## 🚀 Local Quickstart Guide
 
-Run the API:
+### Prerequisites
+- Node.js (v18+)
+- MongoDB Atlas account or local MongoDB instance
 
+### 1. Clone the repository
+```bash
+git clone https://github.com/vinay7376/Swag-e-Swaad.git
+cd Swag-e-Swaad
+```
+
+### 2. Configure Backend Environment
+Create `Backend/.env` using `Backend/.env.example`:
+```env
+PORT=5000
+NODE_ENV=development
+MONGODB_URI=your_mongodb_connection_string
+JWT_SECRET=your_super_secret_jwt_key
+JWT_EXPIRES_IN=7d
+CLIENT_URL=http://localhost:3000,http://localhost:3001,https://swag-e-swaad.vercel.app
+RAZORPAY_KEY_ID=rzp_test_ABC123456789
+RAZORPAY_KEY_SECRET=XYZ987654321
+```
+
+### 3. Run Backend (Terminal 1)
 ```bash
 cd Backend
 npm install
 npm run dev
 ```
+API will listen on `http://localhost:5000`.
 
-Run the client in another terminal:
-
+### 4. Run Frontend (Terminal 2)
 ```bash
 cd Frontend
 npm install
 npm start
 ```
+Frontend will automatically launch at `http://localhost:3000` (or `3001`).
 
-The API runs at `http://localhost:5000`; the client runs at `http://localhost:3000`.
+---
 
-## Environment variables
+## 📡 API Overview
 
-| Variable | Purpose |
-| --- | --- |
-| `MONGODB_URI` | MongoDB connection string |
-| `JWT_SECRET` | Long random JWT signing secret |
-| `JWT_EXPIRES_IN` | Token lifetime (default `7d`) |
-| `CLIENT_URL` | Allowed client origin |
-| `RAZORPAY_KEY_ID` | Razorpay test public key |
-| `RAZORPAY_KEY_SECRET` | Razorpay test secret; backend only |
+| Method | Endpoint | Access | Description |
+|---|---|---|---|
+| `POST` | `/api/auth/register` | Public | Create new customer account |
+| `POST` | `/api/auth/login` | Public | Authenticate user & receive JWT |
+| `POST` | `/api/auth/forgot-password`| Public | Verify user email for password reset |
+| `POST` | `/api/auth/reset-password` | Public | Reset password with validation |
+| `GET` | `/api/auth/profile` | Private | Fetch logged-in user details |
+| `PATCH`| `/api/auth/profile` | Private | Update name, phone, or address |
+| `PATCH`| `/api/auth/password`| Private | Change password for logged-in user |
+| `GET` | `/api/foods` | Public | Search and filter dish catalog |
+| `POST` | `/api/foods` | Admin | Create a new dish |
+| `DELETE`| `/api/foods/:id` | Admin | Delete a dish |
+| `POST` | `/api/orders` | Private | Create an order (COD or Online) |
+| `POST` | `/api/orders/verify-payment`| Private | Verify Razorpay HMAC signature |
+| `GET` | `/api/orders/my-orders` | Private | Retrieve user's order history |
+| `GET` | `/api/orders/:id` | Private | View single order with status timeline |
+| `PATCH`| `/api/orders/:id/cancel` | Private | Cancel pending/confirmed order |
+| `GET` | `/api/admin/dashboard` | Admin | Aggregate sales & revenue dashboard |
+| `GET` | `/api/orders/admin/all` | Admin | View all system orders |
+| `PATCH`| `/api/orders/:id/status` | Admin | Advance order lifecycle status |
 
-Never commit `.env` files or real credentials.
+---
 
-## API overview
+## 📜 License
 
-- `POST /api/auth/register`, `POST /api/auth/login`
-- `GET/PATCH /api/auth/profile`, `PATCH /api/auth/password`
-- `GET /api/foods`; admin `POST/PUT/DELETE /api/foods/:id`
-- `POST /api/orders`, `GET /api/orders/my-orders`, `GET /api/orders/:id`, `PATCH /api/orders/:id/cancel`
-- `POST /api/orders/verify-payment`, `PATCH /api/orders/:id/payment-failed`
-- Admin: `GET /api/admin/dashboard`, `GET /api/admin/users`, `GET /api/orders/admin/all`, `PATCH /api/orders/:id/status`
-
-## Lifecycle and payment flow
-
-Orders progress from `pending` → `confirmed` → `preparing` → `out_for_delivery` → `delivered`, with logical cancellation safeguards. COD begins as payment `pending`. Online orders are created server-side, paid through Razorpay Checkout, and marked `paid` only after HMAC signature verification on the server.
-
-## Security and testing
-
-Passwords are bcrypt-hashed, user order lookups are owner-scoped, and admin routes require `role: admin`. Food prices and coupon totals sent by browsers are ignored. Build the frontend with `npm run build`; validate the backend with `node --check server.js`. For end-to-end testing, provide a reachable MongoDB and Razorpay test credentials, register a user, promote an account to `admin` directly in the development database, and exercise the protected routes.
-
-## Deployment and future work
-
-Deploy the API with environment variables and a managed MongoDB database; point `REACT_APP_API_URL` at its HTTPS URL for a production client build. Useful next steps are image upload storage, email receipts, Razorpay webhooks/refunds, pagination, automated API tests, and an admin food-editing form.
-
-## Screenshots
-
-Add current desktop and mobile screenshots here after running the app locally.
+This project is licensed under the ISC License.
