@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useToast } from "../components/Toast";
 import { api } from "../services/api";
+import { Lock, Eye, EyeOff, ArrowRight } from "lucide-react";
 
 export default function ResetPassword() {
   const { push } = useToast();
@@ -11,6 +12,8 @@ export default function ResetPassword() {
 
   const [pass, setPass] = useState("");
   const [confirm, setConfirm] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
   const [loading, setLoading] = useState(false);
 
   const submit = async (e) => {
@@ -44,30 +47,74 @@ export default function ResetPassword() {
 
   return (
     <div className="auth-page container">
-      <div className="auth-card">
-        <h2>Set new password</h2>
-        <p className="muted">{email ? `for ${email}` : "Enter your new password below."}</p>
-        <form onSubmit={submit} className="auth-form">
-          <label>New Password</label>
-          <input
-            type="password"
-            className="input"
-            placeholder="••••••••"
-            value={pass}
-            onChange={(e) => setPass(e.target.value)}
-          />
+      <div className="modern-auth-card">
+        <div className="auth-brand-header">
+          <div className="auth-logo-badge">
+            <span>🔐</span>
+          </div>
+          <h1 className="auth-title">Set New Password</h1>
+          <p className="auth-subtitle">
+            {email ? `Updating credentials for ${email}` : "Enter your new password below."}
+          </p>
+        </div>
 
-          <label>Confirm Password</label>
-          <input
-            type="password"
-            className="input"
-            placeholder="••••••••"
-            value={confirm}
-            onChange={(e) => setConfirm(e.target.value)}
-          />
+        <form onSubmit={submit} className="modern-auth-form">
+          <div className="auth-field-group">
+            <label className="auth-label">
+              <Lock size={15} />
+              <span>New Password (8+ characters)</span>
+            </label>
+            <div className="auth-input-wrap">
+              <input
+                type={showPassword ? "text" : "password"}
+                className="auth-input"
+                required
+                minLength={8}
+                placeholder="Enter new password"
+                value={pass}
+                onChange={(e) => setPass(e.target.value)}
+              />
+              <button
+                type="button"
+                className="auth-eye-btn"
+                onClick={() => setShowPassword(!showPassword)}
+                aria-label={showPassword ? "Hide password" : "Show password"}
+                tabIndex="-1"
+              >
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
+            </div>
+          </div>
 
-          <button type="submit" className="btn btn-primary" disabled={loading}>
-            {loading ? "Saving..." : "Update Password"}
+          <div className="auth-field-group">
+            <label className="auth-label">
+              <Lock size={15} />
+              <span>Confirm New Password</span>
+            </label>
+            <div className="auth-input-wrap">
+              <input
+                type={showConfirm ? "text" : "password"}
+                className="auth-input"
+                required
+                placeholder="Re-enter new password"
+                value={confirm}
+                onChange={(e) => setConfirm(e.target.value)}
+              />
+              <button
+                type="button"
+                className="auth-eye-btn"
+                onClick={() => setShowConfirm(!showConfirm)}
+                aria-label={showConfirm ? "Hide confirm password" : "Show confirm password"}
+                tabIndex="-1"
+              >
+                {showConfirm ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
+            </div>
+          </div>
+
+          <button type="submit" className="btn btn-primary auth-submit-btn" disabled={loading}>
+            <span>{loading ? "Updating..." : "Update Password & Login"}</span>
+            <ArrowRight size={16} />
           </button>
         </form>
       </div>

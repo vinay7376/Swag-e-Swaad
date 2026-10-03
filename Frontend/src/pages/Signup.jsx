@@ -1,34 +1,42 @@
-import React from "react";
+import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useToast } from "../components/Toast";
 import { api } from "../services/api";
+import { User, Mail, Lock, Eye, EyeOff, ArrowRight } from "lucide-react";
 
 export default function Signup({ onSignup }) {
   const { push } = useToast();
   const navigate = useNavigate();
 
-  const [name, setName] = React.useState("");
-  const [email, setEmail] = React.useState("");
-  const [pass, setPass] = React.useState("");
-  const [confirm, setConfirm] = React.useState("");
-  const [loading, setLoading] = React.useState(false);
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [pass, setPass] = useState("");
+  const [confirm, setConfirm] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const submit = async (e) => {
     e.preventDefault();
+
     if (!name.trim() || !email.trim() || !pass || !confirm) {
-      push({ message: "All fields are required", variant: "error" });
+      push({ message: "Please fill in all fields", variant: "error" });
       return;
     }
+
     if (pass.length < 8) {
       push({ message: "Password must be at least 8 characters", variant: "error" });
       return;
     }
+
     if (pass !== confirm) {
       push({ message: "Passwords do not match", variant: "error" });
       return;
     }
+
     try {
       setLoading(true);
+
       const data = await api("/auth/register", {
         method: "POST",
         body: JSON.stringify({
@@ -37,12 +45,18 @@ export default function Signup({ onSignup }) {
           password: pass,
         }),
       });
+
       localStorage.setItem("fz_token", data.token);
       onSignup(data.user, data.token);
-      push({ message: "Account created! 🎉 Logged in.", variant: "success" });
+
+      push({
+        message: `Welcome to Swag-e-Swaad, ${data.user.name}! 🎉`,
+        variant: "success",
+      });
+
       navigate("/", { replace: true });
     } catch (error) {
-      push({ message: error.message, variant: "error" });
+      push({ message: error.message || "Registration failed", variant: "error" });
     } finally {
       setLoading(false);
     }
@@ -50,28 +64,130 @@ export default function Signup({ onSignup }) {
 
   return (
     <div className="auth-page container">
-      <div className="auth-card">
-        <h2>Create account</h2>
-        <p className="muted">Join Swag-e-Swaad to order faster.</p>
-        <form onSubmit={submit} className="auth-form">
-          <label>Name</label>
-          <input className="input" type="text" placeholder="Jane Doe" value={name} onChange={(e) => setName(e.target.value)} />
+      <div className="modern-auth-card">
+        {/* Brand Header */}
+        <div className="auth-brand-header">
+          <div className="auth-logo-badge">
+            <span>🍽️</span>
+          </div>
+          <h1 className="auth-title">Create Account</h1>
+          <p className="auth-subtitle">
+            Join Swag-e-Swaad to experience superfast food delivery & delicious deals.
+          </p>
+        </div>
 
-          <label>Email</label>
-          <input className="input" type="email" placeholder="you@example.com" value={email} onChange={(e) => setEmail(e.target.value)} />
+        <form onSubmit={submit} className="modern-auth-form">
+          {/* Full Name */}
+          <div className="auth-field-group">
+            <label className="auth-label">
+              <User size={15} />
+              <span>Full Name</span>
+            </label>
+            <div className="auth-input-wrap">
+              <input
+                className="auth-input"
+                type="text"
+                required
+                placeholder="e.g. Aman Sharma"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                autoComplete="name"
+              />
+            </div>
+          </div>
 
-          <label>Password</label>
-          <input className="input" type="password" placeholder="••••••••" value={pass} onChange={(e) => setPass(e.target.value)} />
+          {/* Email */}
+          <div className="auth-field-group">
+            <label className="auth-label">
+              <Mail size={15} />
+              <span>Email Address</span>
+            </label>
+            <div className="auth-input-wrap">
+              <input
+                className="auth-input"
+                type="email"
+                required
+                placeholder="you@example.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                autoComplete="email"
+              />
+            </div>
+          </div>
 
-          <label>Confirm Password</label>
-          <input className="input" type="password" placeholder="••••••••" value={confirm} onChange={(e) => setConfirm(e.target.value)} />
+          {/* Password with Eye Toggle */}
+          <div className="auth-field-group">
+            <label className="auth-label">
+              <Lock size={15} />
+              <span>Create Password (8+ chars)</span>
+            </label>
+            <div className="auth-input-wrap">
+              <input
+                className="auth-input"
+                type={showPassword ? "text" : "password"}
+                required
+                minLength={8}
+                placeholder="At least 8 characters"
+                value={pass}
+                onChange={(e) => setPass(e.target.value)}
+                autoComplete="new-password"
+              />
+              <button
+                type="button"
+                className="auth-eye-btn"
+                onClick={() => setShowPassword(!showPassword)}
+                aria-label={showPassword ? "Hide password" : "Show password"}
+                tabIndex="-1"
+              >
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
+            </div>
+          </div>
 
-          <button className="btn btn-primary" type="submit" disabled={loading}>
-            {loading ? "Creating..." : "Sign up"}
+          {/* Confirm Password with Eye Toggle */}
+          <div className="auth-field-group">
+            <label className="auth-label">
+              <Lock size={15} />
+              <span>Confirm Password</span>
+            </label>
+            <div className="auth-input-wrap">
+              <input
+                className="auth-input"
+                type={showConfirm ? "text" : "password"}
+                required
+                placeholder="Re-enter your password"
+                value={confirm}
+                onChange={(e) => setConfirm(e.target.value)}
+                autoComplete="new-password"
+              />
+              <button
+                type="button"
+                className="auth-eye-btn"
+                onClick={() => setShowConfirm(!showConfirm)}
+                aria-label={showConfirm ? "Hide confirm password" : "Show confirm password"}
+                tabIndex="-1"
+              >
+                {showConfirm ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
+            </div>
+          </div>
+
+          {/* Submit Button */}
+          <button
+            className="btn btn-primary auth-submit-btn"
+            type="submit"
+            disabled={loading}
+          >
+            <span>{loading ? "Creating Account..." : "Create Account"}</span>
+            <ArrowRight size={16} />
           </button>
 
-          <div className="auth-alt">
-            Already have an account? <Link to="/login">Log in</Link>
+          {/* Switch to Login */}
+          <div className="auth-footer-prompt">
+            Already have an account?{" "}
+            <Link to="/login" className="auth-link-highlight">
+              Log In
+            </Link>
           </div>
         </form>
       </div>
