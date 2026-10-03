@@ -3,16 +3,6 @@ import CartItem from "../components/CartItem";
 import { Link, useNavigate } from "react-router-dom";
 import { useToast } from "../components/Toast";
 import { api } from "../services/api";
-import {
-  ShoppingBag,
-  Trash2,
-  Tag,
-  MapPin,
-  FileText,
-  CreditCard,
-  Banknote,
-  Check,
-} from "lucide-react";
 
 const COUPONS = {
   SAVE10: {
@@ -34,20 +24,30 @@ const COUPONS = {
 
 function decodeKey(key) {
   const [idStr, sizePart = "M", addonsPart = ""] = String(key || "").split("|");
+
   const size = sizePart.includes("=") ? sizePart.split("=")[1] : sizePart || "M";
+
   const rawAddons = addonsPart.includes("=") ? addonsPart.split("=")[1] : addonsPart;
   const addons = (rawAddons || "")
     .split(",")
     .map((s) => s.trim())
     .filter(Boolean);
 
-  return { id: idStr, size, addons };
+  return {
+    id: idStr,
+    size,
+    addons,
+  };
 }
 
 function subtitleFromMeta(size, addons) {
   const sizeTxt = `Size: ${size}`;
-  const addonsTxt = addons.length ? ` • Add-ons: ${addons.join(", ")}` : "";
-  return `${sizeTxt}${addonsTxt}`;
+
+  const addonsTxt = addons.length
+    ? `Add-ons: ${addons.join(", ")}`
+    : "No add-ons";
+
+  return `${sizeTxt} • ${addonsTxt}`;
 }
 
 export default function Cart({
@@ -70,7 +70,6 @@ export default function Cart({
   const [touched, setTouched] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
-  // Auto pre-fill address from profile
   useEffect(() => {
     if (!address && user?.address) {
       setAddress(user.address);
@@ -84,6 +83,7 @@ export default function Cart({
     return Object.entries(cart)
       .map(([key, { qty, unitPrice, meta }]) => {
         const decoded = decodeKey(key);
+
         const id = meta?.id || decoded.id;
         const size = meta?.size || decoded.size;
         const addons = meta?.addons || decoded.addons;
@@ -103,107 +103,124 @@ export default function Cart({
           key,
           item,
           qty,
+          unitPrice: Number.isFinite(Number(unitPrice)) ? Number(unitPrice) : computedPrice,
           size,
           addons,
-          unitPrice: Number(unitPrice ?? computedPrice),
         };
       })
-      .filter((x) => Boolean(x.item));
+      .filter((x) => x.item);
   }, [cart, foodItems]);
 
   // =========================
-  // CALCULATIONS
+  // TOTALS
   // =========================
-  const subtotal = useMemo(() => {
-    return items.reduce(
-      (sum, entry) => sum + entry.unitPrice * entry.qty,
-      0
-    );
-  }, [items]);
+  const subtotal = items.reduce(
+    (sum, item) => sum + Number(item.unitPrice) * item.qty,
+    0
+  );
 
-  const discount = useMemo(() => {
-    if (!applied) return 0;
-    const rule = COUPONS[applied];
-    if (rule.type === "percent") {
-      return Math.round((subtotal * rule.value) / 100);
-    }
-    if (rule.type === "flat") {
-      return Math.min(rule.value, subtotal);
-    }
-    return 0;
-  }, [applied, subtotal]);
+  const baseDelivery = items.length > 0 ? 29 : 0;
+  const delivery = applied === "FREESHIP" ? 0 : baseDelivery;
 
-  const delivery = useMemo(() => {
-    if (subtotal === 0) return 0;
-    if (applied === "FREESHIP") return 0;
-    return subtotal > 499 ? 0 : 29;
-  }, [subtotal, applied]);
+  let discount = 0;
+  if (applied === "SAVE10") {
+    discount = Math.round(subtotal * 0.1);
+  }
+  if (applied === "FLAT50") {
+    discount = Math.min(50, subtotal);
+  }
 
-  const tax = useMemo(() => {
-    return Math.round(Math.max(0, subtotal - discount) * 0.05);
-  }, [subtotal, discount]);
+  const taxable = Math.max(subtotal - discount, 0);
+  const tax = Math.round(taxable * 0.05);
+  const total = taxable + delivery + tax;
 
-  const total = useMemo(() => {
-    return Math.max(0, subtotal - discount + delivery + tax);
-  }, [subtotal, discount, delivery, tax]);
+  // =========================
+  // APPLY COUPON
+  // =========================
+  const applyCoupon = () => {
+    const upper = code.trim().toUpperCase();
 
-  const invalidAddress =
-    touched && (!address.trim() || address.trim().length < 10);
+    if (!upper) return;
 
-  // Apply Coupon
-  const applyCoupon = (couponCode) => {
-    const couponToApply = (couponCode || code).trim().toUpperCase();
-    if (!couponToApply) return;
-
-    if (COUPONS[couponToApply]) {
-      setApplied(couponToApply);
-      setCode(couponToApply);
+    if (!COUPONS[upper]) {
       push({
-        message: `Coupon ${couponToApply} applied successfully! 🎉`,
-        variant: "success",
-      });
-    } else {
-      push({
-        message: "Invalid coupon code. Try SAVE10, FLAT50 or FREESHIP.",
+        message: "Invalid coupon code",
         variant: "error",
       });
+      return;
     }
+
+    setApplied(upper);
+
+    push({
+      message: `Applied ${upper} — ${COUPONS[upper].label}`,
+      variant: "success",
+    });
   };
 
+  // =========================
+  // REMOVE COUPON
+  // =========================
   const removeCoupon = () => {
     setApplied(null);
     setCode("");
+
     push({
-      message: "Coupon removed.",
+      message: "Coupon removed",
       variant: "info",
     });
   };
 
   // =========================
-  // RAZORPAY SCRIPT LOADER
+  // CLEAR CART
   // =========================
-  const loadRazorpay = () => {
-    return new Promise((resolve) => {
-      if (window.Razorpay) {
-        return resolve(true);
-      }
-      const script = document.createElement("script");
-      script.src = "https://checkout.razorpay.com/v1/checkout.js";
-      script.onload = () => resolve(true);
-      script.onerror = () => resolve(false);
-      document.body.appendChild(script);
+  const onClearCart = () => {
+    clearCart();
+
+    push({
+      message: "Cart cleared",
+      variant: "info",
     });
   };
 
   // =========================
-  // CHECKOUT (COD or ONLINE)
+  // REMOVE ITEM
   // =========================
+  const onRemoveItem = (key) => {
+    removeFromCart(key);
+
+    push({
+      message: "Item removed",
+      variant: "info",
+    });
+  };
+
+  // =========================
+  // ADDRESS
+  // =========================
+  const invalidAddress = touched && (address.trim().length < 10 || address.trim().length > 500);
+
+  // =========================
+  // PLACE ORDER
+  // =========================
+  const loadRazorpay = () =>
+    new Promise((resolve, reject) => {
+      if (window.Razorpay) return resolve();
+      const script = document.createElement("script");
+      script.src = "https://checkout.razorpay.com/v1/checkout.js";
+      script.onload = resolve;
+      script.onerror = () =>
+        reject(new Error("Unable to load secure payment checkout. Check your internet connection."));
+      document.body.appendChild(script);
+    });
+
   const checkout = async (paymentMethod = "cod") => {
     setTouched(true);
+    let createdOrderId = "";
 
-    if (!address.trim() || address.trim().length < 10) {
+    if (address.trim().length < 10 || address.trim().length > 500) {
       push({
-        message: "Please enter a complete delivery address (at least 10 characters).",
+        message: "Please enter a complete delivery address (10–500 characters).",
         variant: "error",
       });
       return;
@@ -221,14 +238,11 @@ export default function Cart({
 
     if (!token || !user) {
       push({
-        message: "Please login before placing your order.",
+        message: "Please login before placing an order.",
         variant: "error",
       });
-      navigate("/login", { state: { from: "/cart" } });
       return;
     }
-
-    let createdOrderId = null;
 
     try {
       setSubmitting(true);
@@ -257,7 +271,7 @@ export default function Cart({
         let payment;
         if (data.payment?.isMock) {
           const proceed = window.confirm(
-            `💳 Razorpay Online Payment (Simulator Mode)\n\nOrder #${data.order._id.slice(-6)}\nTotal Amount: ₹${data.order.total}\n\nClick OK to simulate successful payment, or Cancel to abort.`
+            `💳 Razorpay Online Payment (Test Simulator)\n\nOrder #${data.order._id.slice(-6)}\nTotal Amount: ₹${data.order.total}\n\nClick OK to simulate successful payment, or Cancel to test payment cancellation.`
           );
           if (!proceed) {
             throw new Error("Payment cancelled by user");
@@ -279,7 +293,7 @@ export default function Cart({
               order_id: data.payment.orderId,
               handler: resolve,
               modal: {
-                ondismiss: () => reject(new Error("Payment window closed")),
+                ondismiss: () => reject(new Error("Payment cancelled")),
               },
             });
             checkoutWindow.open();
@@ -295,8 +309,8 @@ export default function Cart({
       push({
         message:
           paymentMethod === "online"
-            ? "Payment verified! Your order is being prepared! 🎉"
-            : `Order placed successfully! 🎉 Order #${data.order._id.slice(-6)}`,
+            ? "Payment verified and order placed! 🎉"
+            : `Order placed successfully! 🎉 Total: ₹${data.order.total}`,
         variant: "success",
       });
 
@@ -307,7 +321,6 @@ export default function Cart({
       setCode("");
       setTouched(false);
 
-      // Redirect directly to the live Order Receipt & Tracking page
       navigate(`/orders/${data.order._id}`);
     } catch (error) {
       console.error("Place Order Error:", error);
@@ -320,7 +333,7 @@ export default function Cart({
       }
 
       push({
-        message: error.message || "Failed to place order. Please try again.",
+        message: error.message || "Failed to place order",
         variant: "error",
       });
     } finally {
@@ -328,246 +341,252 @@ export default function Cart({
     }
   };
 
+  // =========================
+  // UI
+  // =========================
   return (
     <div className="cart-page container">
-      {/* HEADER */}
-      <div className="cart-page-header">
-        <div>
-          <h1 className="cart-main-heading">Shopping Cart 🛒</h1>
-          <p className="cart-subheading">
-            {items.length > 0
-              ? `You have ${items.length} delicious item(s) ready for checkout.`
-              : "Your cart is currently empty."}
-          </p>
-        </div>
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          marginBottom: 16,
+        }}
+      >
+        <h2 style={{ margin: 0 }}>Your Cart</h2>
 
         {items.length > 0 && (
-          <button
-            className="btn-clear-cart"
-            onClick={clearCart}
-            title="Remove all items from cart"
+          <span
+            className="muted"
+            style={{ fontWeight: 600 }}
           >
-            <Trash2 size={16} />
-            <span>Clear Cart</span>
-          </button>
+            Delivery ETA:{" "}
+            <span style={{ color: "var(--text)" }}>
+              30–40 min
+            </span>
+          </span>
         )}
       </div>
 
-      {/* EMPTY CART */}
-      {items.length === 0 ? (
-        <div className="empty-cart-card">
-          <div className="empty-cart-emoji">🍽️</div>
-          <h2>Your cart is feeling light!</h2>
+      {foodsLoading && Object.keys(cart).length > 0 ? (
+        <div className="empty">
+          <h3>Loading cart...</h3>
+          <p className="muted">Fetching the latest items and prices.</p>
+        </div>
+      ) : items.length === 0 ? (
+        <div className="empty">
+          <div className="empty-ill" />
+
+          <h3>Cart is empty</h3>
+
           <p className="muted">
-            Explore our curated menu of pizzas, royal biryanis, and crunchy snacks to fill it up.
+            Browse the menu and add something tasty.
           </p>
-          <Link to="/menu" className="btn btn-primary btn-explore-menu">
-            <ShoppingBag size={17} />
-            <span>Explore Menu & Order</span>
+
+          <Link
+            className="btn btn-primary"
+            to="/menu"
+            style={{ marginTop: 10 }}
+          >
+            Browse Menu
           </Link>
         </div>
       ) : (
-        /* TWO COLUMN LAYOUT */
         <div className="cart-layout">
-          {/* LEFT: ITEMS LIST */}
-          <div className="cart-items-column">
-            <div className="cart-items-wrapper">
-              {items.map((entry) => (
+          {/* CART ITEMS */}
+          <div className="cart-list">
+            {items.map(
+              ({
+                key,
+                item,
+                qty,
+                unitPrice,
+                size,
+                addons,
+              }) => (
                 <CartItem
-                  key={entry.key}
-                  variantKey={entry.key}
-                  item={entry.item}
-                  qty={entry.qty}
-                  unitPrice={entry.unitPrice}
-                  subtitle={subtitleFromMeta(entry.size, entry.addons)}
+                  key={key}
+                  item={item}
+                  qty={qty}
+                  unitPrice={unitPrice}
+                  subtitle={subtitleFromMeta(
+                    size,
+                    addons
+                  )}
                   onIncrease={increaseQty}
                   onDecrease={decreaseQty}
-                  onRemove={removeFromCart}
+                  onRemove={onRemoveItem}
+                  variantKey={key}
                 />
-              ))}
-            </div>
-
-            {/* Back to menu helper */}
-            <div className="cart-add-more-strip">
-              <span>Craving more delicacies?</span>
-              <Link to="/menu" className="link-add-more">
-                + Add More Dishes
-              </Link>
-            </div>
+              )
+            )}
           </div>
 
-          {/* RIGHT: ORDER SUMMARY SIDEBAR */}
-          <aside className="cart-summary-sidebar">
-            <h3 className="summary-card-title">Order Bill Details</h3>
+          {/* ORDER SUMMARY */}
+          <aside className="summary">
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                marginBottom: 10,
+              }}
+            >
+              <h3 style={{ margin: 0 }}>
+                Order Summary
+              </h3>
 
-            {/* FREE DELIVERY HINT */}
-            {subtotal < 500 && applied !== "FREESHIP" && (
-              <div className="free-ship-banner">
-                <span>Add ₹{500 - subtotal} more for <strong>FREE Delivery</strong>!</span>
+              <button
+                className="btn btn-ghost"
+                onClick={onClearCart}
+              >
+                Clear Cart
+              </button>
+            </div>
+
+            {/* COUPON */}
+            <div
+              className="row"
+              style={{
+                gap: 8,
+                alignItems: "center",
+                marginTop: 6,
+              }}
+            >
+              <input
+                type="text"
+                placeholder="Coupon (SAVE10 / FLAT50 / FREESHIP)"
+                value={code}
+                onChange={(e) => setCode(e.target.value)}
+                className="input"
+                style={{ flex: 1 }}
+              />
+
+              {!applied ? (
+                <button
+                  className="btn btn-primary"
+                  onClick={applyCoupon}
+                >
+                  Apply
+                </button>
+              ) : (
+                <button
+                  className="btn btn-ghost"
+                  onClick={removeCoupon}
+                >
+                  Remove
+                </button>
+              )}
+            </div>
+
+            {applied && (
+              <p
+                className="muted"
+                style={{ marginTop: 6 }}
+              >
+                Applied:{" "}
+                <strong>{applied}</strong> –{" "}
+                {COUPONS[applied].label}
+              </p>
+            )}
+
+            {/* TOTALS */}
+            <div className="row">
+              <span>Subtotal</span>
+              <span>₹{subtotal}</span>
+            </div>
+
+            {discount > 0 && (
+              <div className="row">
+                <span>Discount</span>
+                <span>-₹{discount}</span>
               </div>
             )}
 
-            {/* COUPON INPUT & QUICK CHIPS */}
-            <div className="cart-coupon-section">
-              <label className="sidebar-field-label">
-                <Tag size={14} />
-                <span>Apply Coupon Code</span>
+            <div className="row">
+              <span>Delivery</span>
+              <span>₹{delivery}</span>
+            </div>
+
+            <div className="row">
+              <span>Tax (5%)</span>
+              <span>₹{tax}</span>
+            </div>
+
+            <hr />
+
+            <div className="row total">
+              <span>Total</span>
+              <span>₹{total}</span>
+            </div>
+
+            {/* NOTES + ADDRESS */}
+            <div
+              style={{
+                marginTop: 12,
+                display: "grid",
+                gap: 8,
+              }}
+            >
+              <label className="label">
+                Order notes (optional)
               </label>
 
-              <div className="coupon-input-group">
-                <input
-                  type="text"
-                  placeholder="SAVE10, FLAT50..."
-                  value={code}
-                  onChange={(e) => setCode(e.target.value.toUpperCase())}
-                  className="coupon-text-input"
-                  disabled={!!applied}
-                />
-                {!applied ? (
-                  <button
-                    className="btn-apply-coupon"
-                    onClick={() => applyCoupon(code)}
-                    disabled={!code.trim()}
-                  >
-                    Apply
-                  </button>
-                ) : (
-                  <button className="btn-remove-coupon" onClick={removeCoupon}>
-                    Remove
-                  </button>
-                )}
-              </div>
+              <textarea
+                className="textarea"
+                placeholder="Any preferences or instructions?"
+                value={note}
+                onChange={(e) => setNote(e.target.value)}
+              />
 
-              {/* QUICK TAP COUPON CHIPS */}
-              {!applied && (
-                <div className="quick-coupons-row">
-                  <button
-                    type="button"
-                    className="coupon-quick-chip"
-                    onClick={() => applyCoupon("SAVE10")}
-                  >
-                    SAVE10 (10% OFF)
-                  </button>
-                  <button
-                    type="button"
-                    className="coupon-quick-chip"
-                    onClick={() => applyCoupon("FLAT50")}
-                  >
-                    FLAT50 (₹50 OFF)
-                  </button>
-                  <button
-                    type="button"
-                    className="coupon-quick-chip"
-                    onClick={() => applyCoupon("FREESHIP")}
-                  >
-                    FREESHIP
-                  </button>
-                </div>
-              )}
+              <label className="label">
+                Delivery address{" "}
+                <span
+                  style={{
+                    color: invalidAddress
+                      ? "#ef4444"
+                      : "var(--muted)",
+                  }}
+                >
+                  *
+                </span>
+              </label>
 
-              {applied && (
-                <div className="coupon-active-badge">
-                  <Check size={14} color="#16a34a" />
-                  <span>Applied: <strong>{applied}</strong> ({COUPONS[applied].label})</span>
-                </div>
+              <textarea
+                className={`textarea ${
+                  invalidAddress ? "error" : ""
+                }`}
+                placeholder="Flat/House no, Area, City, Pincode"
+                value={address}
+                onChange={(e) =>
+                  setAddress(e.target.value)
+                }
+                onBlur={() => setTouched(true)}
+              />
+
+              {invalidAddress && (
+                <span className="hint error">
+                  Complete address is required (10–500 characters).
+                </span>
               )}
             </div>
 
-            {/* BILL BREAKDOWN */}
-            <div className="bill-breakdown-list">
-              <div className="bill-row">
-                <span>Item Subtotal</span>
-                <span>₹{subtotal}</span>
-              </div>
-
-              {discount > 0 && (
-                <div className="bill-row row-discount">
-                  <span>Coupon Discount</span>
-                  <span>-₹{discount}</span>
-                </div>
-              )}
-
-              <div className="bill-row">
-                <span>Delivery Fee</span>
-                <span>{delivery === 0 ? <strong style={{ color: "#16a34a" }}>FREE</strong> : `₹${delivery}`}</span>
-              </div>
-
-              <div className="bill-row">
-                <span>Taxes & Charges (5%)</span>
-                <span>₹{tax}</span>
-              </div>
-
-              <div className="bill-divider" />
-
-              <div className="bill-row bill-grand-total">
-                <span>To Pay</span>
-                <span className="grand-total-amount">₹{total}</span>
-              </div>
-            </div>
-
-            {/* ADDRESS & NOTES */}
-            <div className="checkout-inputs-block">
-              {/* Delivery Address */}
-              <div className="checkout-field">
-                <div className="field-label-row">
-                  <label className="sidebar-field-label">
-                    <MapPin size={14} />
-                    <span>Delivery Address</span>
-                  </label>
-                  <span className="char-counter">{address.length}/500</span>
-                </div>
-
-                <textarea
-                  className={`checkout-textarea ${invalidAddress ? "input-has-error" : ""}`}
-                  placeholder="Complete delivery address: Flat/House No, Street, Landmark, Pincode"
-                  value={address}
-                  maxLength={500}
-                  onChange={(e) => setAddress(e.target.value)}
-                  onBlur={() => setTouched(true)}
-                  rows="3"
-                />
-
-                {invalidAddress && (
-                  <span className="error-validation-msg">
-                    * Full address is required (10–500 characters).
-                  </span>
-                )}
-              </div>
-
-              {/* Order Notes */}
-              <div className="checkout-field">
-                <label className="sidebar-field-label">
-                  <FileText size={14} />
-                  <span>Cooking / Delivery Instructions</span>
-                </label>
-                <textarea
-                  className="checkout-textarea"
-                  placeholder="e.g. Please ring bell, less spicy, extra napkins..."
-                  value={note}
-                  onChange={(e) => setNote(e.target.value)}
-                  rows="2"
-                />
-              </div>
-            </div>
-
-            {/* CHECKOUT ACTION BUTTONS */}
-            <div className="checkout-cta-group">
+            {/* PLACE ORDER */}
+            <div className="summary-actions">
               <button
-                className="btn-pay-cod"
+                className="btn btn-primary"
                 onClick={() => checkout("cod")}
                 disabled={submitting}
               >
-                <Banknote size={18} />
-                <span>{submitting ? "Placing Order..." : "Cash on Delivery (COD)"}</span>
+                {submitting ? "Placing Order..." : "Place COD Order"}
               </button>
-
               <button
-                className="btn-pay-online"
+                className="btn btn-ghost"
                 onClick={() => checkout("online")}
                 disabled={submitting}
               >
-                <CreditCard size={18} />
-                <span>{submitting ? "Processing..." : "Pay Online (Cards / UPI)"}</span>
+                {submitting ? "Processing..." : "Pay Online"}
               </button>
             </div>
           </aside>
