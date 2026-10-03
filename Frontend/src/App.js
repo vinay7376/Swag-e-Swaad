@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { BrowserRouter as Router, Routes, Route, useLocation, Navigate } from "react-router-dom";
 import Navbar from "./components/Navbar"; import Footer from "./components/Footer";
+import AiAssistant from "./components/AiAssistant";
 import Home from "./pages/Home"; import Menu from "./pages/Menu"; import Cart from "./pages/Cart"; import Favorites from "./pages/Favorites"; import Orders from "./pages/Orders"; import OrderDetails from "./pages/OrderDetails"; import Login from "./pages/Login"; import Signup from "./pages/Signup"; import Profile from "./pages/Profile"; import Admin from "./pages/Admin"; import ForgotPassword from "./pages/ForgotPassword"; import ResetPassword from "./pages/ResetPassword";
 import { ToastProvider, useToast } from "./components/Toast"; import { api } from "./services/api"; import "./App.css";
 function RequireAuth({ user, children, adminOnly = false }) { const location = useLocation(); if (!user) return <Navigate to="/login" replace state={{ from: location.pathname }} />; return adminOnly && user.role !== "admin" ? <Navigate to="/" replace /> : children; }
@@ -237,6 +238,10 @@ function AppContent() {
         <Route path="/reset" element={<ResetPassword />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
+      <AiAssistant
+        addToCart={(item) => addConfiguredToCart(item, { size: "M", addons: [] })}
+        getQtyForId={getQtyForId}
+      />
       <Footer />
     </>
   );
