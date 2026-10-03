@@ -61,13 +61,13 @@ export default function ResetPassword() {
         <form onSubmit={submit} className="modern-auth-form">
           <div className="auth-field-group">
             <label className="auth-label">
-              <Lock size={15} />
+              <Lock size={15} color="var(--brand)" />
               <span>New Password (8+ characters)</span>
             </label>
             <div className="auth-input-wrap">
               <input
                 type={showPassword ? "text" : "password"}
-                className="auth-input"
+                className="auth-input has-eye"
                 required
                 minLength={8}
                 placeholder="Enter new password"
@@ -88,13 +88,13 @@ export default function ResetPassword() {
 
           <div className="auth-field-group">
             <label className="auth-label">
-              <Lock size={15} />
+              <Lock size={15} color="var(--brand)" />
               <span>Confirm New Password</span>
             </label>
             <div className="auth-input-wrap">
               <input
                 type={showConfirm ? "text" : "password"}
-                className="auth-input"
+                className="auth-input has-eye"
                 required
                 placeholder="Re-enter new password"
                 value={confirm}

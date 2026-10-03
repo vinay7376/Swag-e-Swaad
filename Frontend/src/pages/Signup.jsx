@@ -80,7 +80,7 @@ export default function Signup({ onSignup }) {
           {/* Full Name */}
           <div className="auth-field-group">
             <label className="auth-label">
-              <User size={15} />
+              <User size={15} color="var(--brand)" />
               <span>Full Name</span>
             </label>
             <div className="auth-input-wrap">
@@ -99,7 +99,7 @@ export default function Signup({ onSignup }) {
           {/* Email */}
           <div className="auth-field-group">
             <label className="auth-label">
-              <Mail size={15} />
+              <Mail size={15} color="var(--brand)" />
               <span>Email Address</span>
             </label>
             <div className="auth-input-wrap">
@@ -118,12 +118,12 @@ export default function Signup({ onSignup }) {
           {/* Password with Eye Toggle */}
           <div className="auth-field-group">
             <label className="auth-label">
-              <Lock size={15} />
+              <Lock size={15} color="var(--brand)" />
               <span>Create Password (8+ chars)</span>
             </label>
             <div className="auth-input-wrap">
               <input
-                className="auth-input"
+                className="auth-input has-eye"
                 type={showPassword ? "text" : "password"}
                 required
                 minLength={8}
@@ -147,12 +147,12 @@ export default function Signup({ onSignup }) {
           {/* Confirm Password with Eye Toggle */}
           <div className="auth-field-group">
             <label className="auth-label">
-              <Lock size={15} />
+              <Lock size={15} color="var(--brand)" />
               <span>Confirm Password</span>
             </label>
             <div className="auth-input-wrap">
               <input
-                className="auth-input"
+                className="auth-input has-eye"
                 type={showConfirm ? "text" : "password"}
                 required
                 placeholder="Re-enter your password"

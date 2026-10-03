@@ -84,7 +84,7 @@ export default function Login({ onLogin }) {
           {/* Email Field */}
           <div className="auth-field-group">
             <label className="auth-label">
-              <Mail size={15} />
+              <Mail size={15} color="var(--brand)" />
               <span>Email Address</span>
             </label>
             <div className="auth-input-wrap">
@@ -104,7 +104,7 @@ export default function Login({ onLogin }) {
           <div className="auth-field-group">
             <div className="auth-label-between">
               <label className="auth-label">
-                <Lock size={15} />
+                <Lock size={15} color="var(--brand)" />
                 <span>Password</span>
               </label>
               <Link to="/forgot" className="auth-forgot-link">
@@ -113,7 +113,7 @@ export default function Login({ onLogin }) {
             </div>
             <div className="auth-input-wrap">
               <input
-                className="auth-input"
+                className="auth-input has-eye"
                 type={showPassword ? "text" : "password"}
                 required
                 placeholder="Enter your password"
