@@ -165,9 +165,42 @@ export default function Home({ foods = [], addToCart, getQtyForId }) {
               <Link to="/menu?category=Burgers" className="hero-tag">🍔 Burgers</Link>
               <Link to="/menu?category=Starters" className="hero-tag">🍗 Starters</Link>
             </div>
+
+            {/* Clean Hero Trust Bar (30 Mins & 100% Fresh) */}
+            <div className="hero-trust-bar">
+              <div className="hero-trust-badge">
+                <div className="trust-icon-box speed">
+                  <Zap size={16} />
+                </div>
+                <div className="trust-badge-text">
+                  <strong>30 Mins</strong>
+                  <span>Lightning Delivery</span>
+                </div>
+              </div>
+
+              <div className="hero-trust-badge">
+                <div className="trust-icon-box fresh">
+                  <ShieldCheck size={16} />
+                </div>
+                <div className="trust-badge-text">
+                  <strong>100% Fresh</strong>
+                  <span>Hygienic Kitchen</span>
+                </div>
+              </div>
+
+              <div className="hero-trust-badge">
+                <div className="trust-icon-box rating">
+                  <Star size={16} />
+                </div>
+                <div className="trust-badge-text">
+                  <strong>Top Rated</strong>
+                  <span>4.9★ Quality Food</span>
+                </div>
+              </div>
+            </div>
           </div>
 
-          {/* Right Visual Card Showcase */}
+          {/* Right Visual Card Showcase (Unobstructed & Clean) */}
           <div className="home-hero-right">
             <div className="hero-dish-card">
               <div className="hero-dish-media">
@@ -216,23 +249,6 @@ export default function Home({ foods = [], addToCart, getQtyForId }) {
                     <ArrowRight size={15} />
                   </Link>
                 </div>
-              </div>
-            </div>
-
-            {/* Floating micro stats */}
-            <div className="floating-stat-box stat-speed">
-              <Zap size={20} className="speed-icon" />
-              <div>
-                <strong>30 Mins</strong>
-                <p>Lightning Delivery</p>
-              </div>
-            </div>
-
-            <div className="floating-stat-box stat-hygiene">
-              <ShieldCheck size={20} className="hygiene-icon" />
-              <div>
-                <strong>100% Fresh</strong>
-                <p>Hygienic Kitchen</p>
               </div>
             </div>
           </div>
