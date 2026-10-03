@@ -6,7 +6,7 @@ import {
   FaTwitter,
   FaYoutube,
 } from "react-icons/fa";
-import { Phone, Mail, Clock, Heart } from "lucide-react";
+import { Mail, Clock, Heart } from "lucide-react";
 
 const Footer = () => {
   return (
@@ -24,14 +24,10 @@ const Footer = () => {
           </p>
 
           <div className="footer-contact-items">
-            <div className="contact-item">
-              <Phone size={15} className="contact-icon" />
-              <span>+91 98765 43210</span>
-            </div>
-            <div className="contact-item">
+            <a href="mailto:vphandia7376@gmail.com" className="contact-item" style={{ color: "inherit", textDecoration: "none" }}>
               <Mail size={15} className="contact-icon" />
-              <span>support@swageswaad.com</span>
-            </div>
+              <span>vphandia7376@gmail.com</span>
+            </a>
             <div className="contact-item">
               <Clock size={15} className="contact-icon" />
               <span>Open Daily: 10:00 AM – 11:30 PM</span>

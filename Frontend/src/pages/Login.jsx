@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useToast } from "../components/Toast";
 import { api } from "../services/api";
-import { Mail, Lock, Eye, EyeOff, ArrowRight } from "lucide-react";
+import { Mail, Lock, Eye, EyeOff, ArrowRight, Zap } from "lucide-react";
 
 export default function Login({ onLogin }) {
   const { push } = useToast();
@@ -66,6 +66,39 @@ export default function Login({ onLogin }) {
     }
   };
 
+  const handleDemoLogin = async (demoEmail, demoPassword) => {
+    setEmail(demoEmail);
+    setPassword(demoPassword);
+    try {
+      setLoading(true);
+      const data = await api("/auth/login", {
+        method: "POST",
+        body: JSON.stringify({
+          email: demoEmail,
+          password: demoPassword,
+        }),
+      });
+
+      localStorage.setItem("fz_token", data.token);
+      onLogin(data.user, data.token, { remember });
+
+      push({
+        message: `Welcome ${data.user.name}! Logged in as ${data.user.role.toUpperCase()} 🎉`,
+        variant: "success",
+      });
+
+      navigate(data.user.role === "admin" ? "/admin" : redirectTo, { replace: true });
+    } catch (error) {
+      console.error("Demo Login Error:", error);
+      push({
+        message: error.message || "Demo login failed",
+        variant: "error",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="auth-page container">
       <div className="modern-auth-card">
@@ -78,6 +111,38 @@ export default function Login({ onLogin }) {
           <p className="auth-subtitle">
             Log in to your Swag-e-Swaad account to track orders & enjoy exclusive foodie perks.
           </p>
+        </div>
+
+        {/* 1-Click Demo Login for Recruiters / Reviewers */}
+        <div className="demo-login-box">
+          <div className="demo-login-header">
+            <Zap size={14} className="demo-zap-icon" />
+            <span>Recruiter & Quick Demo Login:</span>
+          </div>
+          <div className="demo-btn-group">
+            <button
+              type="button"
+              className="btn-demo-pill user-demo"
+              disabled={loading}
+              onClick={() => handleDemoLogin("demo@swageswaad.com", "demo@123")}
+              title="1-Click Login as Demo Customer"
+            >
+              👤 Customer Demo
+            </button>
+            <button
+              type="button"
+              className="btn-demo-pill admin-demo"
+              disabled={loading}
+              onClick={() => handleDemoLogin("admin@swageswaad.com", "admin@123")}
+              title="1-Click Login as Admin (access /admin)"
+            >
+              🛡️ Admin Demo
+            </button>
+          </div>
+        </div>
+
+        <div className="auth-separator">
+          <span>or sign in with email</span>
         </div>
 
         <form onSubmit={submit} className="modern-auth-form">

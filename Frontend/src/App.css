@@ -3809,6 +3809,115 @@ button {
   line-height: 1.5;
   margin: 0;
 }
+/* Recruiter & Demo 1-Click Login Box */
+.demo-login-box {
+  background: linear-gradient(135deg, rgba(37, 99, 235, 0.08), rgba(245, 158, 11, 0.08));
+  border: 1px dashed var(--brand);
+  border-radius: var(--r-lg);
+  padding: 14px 16px;
+  margin-bottom: 18px;
+}
+
+.demo-login-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--brand);
+  margin-bottom: 10px;
+}
+
+.demo-zap-icon {
+  color: #f59e0b;
+}
+
+.demo-btn-group {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.btn-demo-pill {
+  padding: 9px 12px;
+  border-radius: var(--r-md);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: all 0.2s ease;
+  border: 1px solid transparent;
+}
+
+.btn-demo-pill.user-demo {
+  background: var(--surface-2);
+  color: var(--text);
+  border-color: var(--border);
+}
+
+.btn-demo-pill.user-demo:hover {
+  background: var(--brand-weak);
+  border-color: var(--brand);
+  color: var(--brand);
+  transform: translateY(-1px);
+}
+
+.btn-demo-pill.admin-demo {
+  background: rgba(168, 85, 247, 0.12);
+  color: #9333ea;
+  border-color: rgba(168, 85, 247, 0.3);
+}
+
+.dark .btn-demo-pill.admin-demo {
+  color: #c084fc;
+}
+
+.btn-demo-pill.admin-demo:hover {
+  background: rgba(168, 85, 247, 0.22);
+  transform: translateY(-1px);
+}
+
+.auth-separator {
+  display: flex;
+  align-items: center;
+  text-align: center;
+  margin-bottom: 16px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.auth-separator::before,
+.auth-separator::after {
+  content: "";
+  flex: 1;
+  border-bottom: 1px solid var(--border);
+}
+
+.auth-separator span {
+  padding: 0 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  font-weight: 600;
+}
+
+.demo-signup-hint {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  padding: 10px 14px;
+  border-radius: var(--r-md);
+  font-size: 12.5px;
+  color: var(--muted);
+  margin-bottom: 18px;
+}
 
 .modern-auth-form {
   display: flex;

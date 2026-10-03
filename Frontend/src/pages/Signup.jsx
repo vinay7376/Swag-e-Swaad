@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useToast } from "../components/Toast";
 import { api } from "../services/api";
-import { User, Mail, Lock, Eye, EyeOff, ArrowRight } from "lucide-react";
+import { User, Mail, Lock, Eye, EyeOff, ArrowRight, Zap } from "lucide-react";
 
 export default function Signup({ onSignup }) {
   const { push } = useToast();
@@ -74,6 +74,12 @@ export default function Signup({ onSignup }) {
           <p className="auth-subtitle">
             Join Swag-e-Swaad to experience superfast food delivery & delicious deals.
           </p>
+        </div>
+
+        {/* Recruiter / Evaluator Hint */}
+        <div className="demo-signup-hint">
+          <Zap size={14} color="#f59e0b" />
+          <span>Evaluating as recruiter? Use our <Link to="/login" className="auth-link-highlight">1-Click Demo Login</Link></span>
         </div>
 
         <form onSubmit={submit} className="modern-auth-form">
