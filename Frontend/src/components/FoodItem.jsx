@@ -36,14 +36,16 @@ function FoodItem({
     ["Bestseller", "Chef's Special", "Popular", "Spicy"].includes(t)
   );
 
+  const safeImage = item.image ? encodeURI(item.image) : "";
+
   return (
     <>
-      <div className={`food-card modern-food-card ${!item.isAvailable ? "unavailable" : ""}`}>
+      <div className={`modern-food-card ${!item.isAvailable ? "card-sold-out" : ""}`}>
         {/* Media / Image Container */}
         <div className="card-media">
           <img
             loading="lazy"
-            src={item.image}
+            src={safeImage}
             alt={item.name}
             onError={(e) => {
               e.target.onerror = null;
@@ -51,11 +53,14 @@ function FoodItem({
             }}
           />
 
+          {/* Overlay gradient for contrast */}
+          <div className="card-image-gradient" />
+
           {/* Special badge tag (top-left) */}
           {specialTag && (
             <div className={`badge-pill ${specialTag === "Bestseller" ? "pill-bestseller" : "pill-special"}`}>
               {specialTag === "Bestseller" && <Flame size={12} />}
-              {specialTag}
+              <span>{specialTag}</span>
             </div>
           )}
 
@@ -70,7 +75,7 @@ function FoodItem({
               aria-label={fav ? "Remove from favorites" : "Add to favorites"}
               title={fav ? "Remove from favorites" : "Add to favorites"}
             >
-              <Heart size={16} fill={fav ? "#ef4444" : "none"} color={fav ? "#ef4444" : "currentColor"} />
+              <Heart size={16} fill={fav ? "#ef4444" : "none"} color={fav ? "#ef4444" : "#ffffff"} />
             </button>
           )}
 
@@ -85,7 +90,10 @@ function FoodItem({
         <div className="food-content">
           <div className="food-header-row">
             {/* Swiggy/Zomato style Veg / Non-Veg Indicator */}
-            <div className={`diet-indicator ${item.isVeg ? "diet-veg" : "diet-nonveg"}`} title={item.isVeg ? "Pure Veg" : "Non-Veg"}>
+            <div
+              className={`diet-indicator ${item.isVeg ? "diet-veg" : "diet-nonveg"}`}
+              title={item.isVeg ? "Pure Veg" : "Non-Veg"}
+            >
               <span className="diet-dot" />
             </div>
 
@@ -94,9 +102,9 @@ function FoodItem({
 
           <h3 className="food-name" title={item.name}>{item.name}</h3>
 
-          {item.description && (
-            <p className="food-desc">{item.description}</p>
-          )}
+          <p className="food-desc">
+            {item.description || "Freshly cooked with authentic spices and delivered hot."}
+          </p>
 
           {!item.isAvailable && (
             <span className="badge-unavailable">Currently Sold Out</span>
@@ -112,14 +120,14 @@ function FoodItem({
             <div className="card-btn-group">
               {inCartQty > 0 ? (
                 <div className="in-cart-indicator">
-                  <span>In cart: {inCartQty}</span>
+                  <span>In Cart ({inCartQty})</span>
                 </div>
               ) : (
                 <button
                   className="btn-quick-add"
                   onClick={handleAdd}
                   disabled={!item.isAvailable}
-                  title="Add to cart"
+                  title="Quick add standard size"
                 >
                   <Plus size={15} />
                   <span>Add</span>
@@ -132,7 +140,7 @@ function FoodItem({
                 disabled={!item.isAvailable}
                 title="Customize size & toppings"
               >
-                <SlidersHorizontal size={14} />
+                <SlidersHorizontal size={13} />
                 <span>Custom</span>
               </button>
             </div>
