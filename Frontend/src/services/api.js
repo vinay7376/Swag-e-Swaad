@@ -1,5 +1,14 @@
-export const API_BASE =
-  process.env.REACT_APP_API_URL || "https://swag-e-swaad.onrender.com/api";
+const getApiBase = () => {
+  if (process.env.REACT_APP_API_URL) {
+    return process.env.REACT_APP_API_URL.replace(/\/+$/, "");
+  }
+  if (typeof window !== "undefined" && (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1")) {
+    return "http://localhost:5000/api";
+  }
+  return "https://swag-e-swaad.onrender.com/api";
+};
+
+export const API_BASE = getApiBase();
 
 export async function api(path, options = {}) {
   const token = localStorage.getItem("fz_token");

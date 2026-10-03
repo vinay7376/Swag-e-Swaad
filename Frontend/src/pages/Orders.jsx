@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-
-const API_URL = "http://localhost:5000/api/orders/my-orders";
+import { api } from "../services/api";
 
 export default function Orders() {
   const [orders, setOrders] = useState([]);
@@ -19,21 +18,7 @@ export default function Orders() {
           );
         }
 
-        const response = await fetch(API_URL, {
-          method: "GET",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-
-        const data = await response.json();
-
-        if (!response.ok) {
-          throw new Error(
-            data.message || "Failed to fetch orders"
-          );
-        }
-
+        const data = await api("/orders/my-orders");
         setOrders(data.orders || []);
       } catch (err) {
         console.error("Orders Error:", err);

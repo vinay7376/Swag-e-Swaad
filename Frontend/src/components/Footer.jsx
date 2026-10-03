@@ -1,4 +1,5 @@
 import React from "react";
+import { Link } from "react-router-dom";
 import {
   FaFacebook,
   FaInstagram,
@@ -20,20 +21,19 @@ const Footer = () => {
 
         {/* Social Icons */}
         <div className="footer-socials">
-          <a href="#"><FaFacebook size={20} /></a>
-          <a href="#"><FaInstagram size={20} /></a>
-          <a href="#"><FaTwitter size={20} /></a>
-          <a href="#"><FaYoutube size={20} /></a>
+          <a href="https://facebook.com" target="_blank" rel="noreferrer" aria-label="Facebook"><FaFacebook size={20} /></a>
+          <a href="https://instagram.com" target="_blank" rel="noreferrer" aria-label="Instagram"><FaInstagram size={20} /></a>
+          <a href="https://twitter.com" target="_blank" rel="noreferrer" aria-label="Twitter"><FaTwitter size={20} /></a>
+          <a href="https://youtube.com" target="_blank" rel="noreferrer" aria-label="YouTube"><FaYoutube size={20} /></a>
         </div>
 
         {/* Links */}
         <div className="footer-links">
-          <a href="/menu">Menu</a>
-          <a href="/favorites">Favorites</a>
-          <a href="/cart">Cart</a>
-          <a href="#">About</a>
-          <a href="#">Contact</a>
-          <a href="#">FAQ</a>
+          <Link to="/menu">Menu</Link>
+          <Link to="/favorites">Favorites</Link>
+          <Link to="/cart">Cart</Link>
+          <Link to="/menu">About</Link>
+          <Link to="/menu">Contact</Link>
         </div>
 
         {/* Copyright */}

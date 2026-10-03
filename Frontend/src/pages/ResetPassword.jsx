@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useToast } from "../components/Toast";
+import { api } from "../services/api";
 
 export default function ResetPassword() {
   const { push } = useToast();
@@ -12,25 +13,33 @@ export default function ResetPassword() {
   const [confirm, setConfirm] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const submit = (e) => {
+  const submit = async (e) => {
     e.preventDefault();
     if (!pass || !confirm) {
       push({ message: "Please enter and confirm your new password.", variant: "error" });
       return;
     }
-    if (pass.length < 6) {
-      push({ message: "Password must be at least 6 characters.", variant: "error" });
+    if (pass.length < 8) {
+      push({ message: "Password must be at least 8 characters.", variant: "error" });
       return;
     }
     if (pass !== confirm) {
       push({ message: "Passwords do not match.", variant: "error" });
       return;
     }
-    setLoading(true);
-    setTimeout(() => {
-      push({ message: "Password updated. Please log in.", variant: "success" });
+    try {
+      setLoading(true);
+      const data = await api("/auth/reset-password", {
+        method: "POST",
+        body: JSON.stringify({ email: email.trim(), password: pass }),
+      });
+      push({ message: data.message || "Password updated. Please log in.", variant: "success" });
       navigate("/login", { replace: true, state: { emailPrefill: email } });
-    }, 700);
+    } catch (err) {
+      push({ message: err.message || "Failed to update password", variant: "error" });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (

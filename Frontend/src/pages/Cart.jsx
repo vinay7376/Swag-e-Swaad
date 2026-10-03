@@ -1,7 +1,8 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import CartItem from "../components/CartItem";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useToast } from "../components/Toast";
+import { api } from "../services/api";
 
 const COUPONS = {
   SAVE10: {
@@ -22,12 +23,14 @@ const COUPONS = {
 };
 
 function decodeKey(key) {
-  const [idStr, sizePart, addonsPart] = key.split("|");
+  const [idStr, sizePart = "M", addonsPart = ""] = String(key || "").split("|");
 
-  const size = sizePart?.split("=")[1] || "M";
+  const size = sizePart.includes("=") ? sizePart.split("=")[1] : sizePart || "M";
 
-  const addons = (addonsPart?.split("=")[1] || "")
+  const rawAddons = addonsPart.includes("=") ? addonsPart.split("=")[1] : addonsPart;
+  const addons = (rawAddons || "")
     .split(",")
+    .map((s) => s.trim())
     .filter(Boolean);
 
   return {
@@ -50,6 +53,7 @@ function subtitleFromMeta(size, addons) {
 export default function Cart({
   cart,
   foodItems,
+  foodsLoading = false,
   increaseQty,
   decreaseQty,
   removeFromCart,
@@ -57,12 +61,20 @@ export default function Cart({
   user,
 }) {
   const { push } = useToast();
+  const navigate = useNavigate();
 
   const [code, setCode] = useState("");
   const [applied, setApplied] = useState(null);
   const [note, setNote] = useState("");
   const [address, setAddress] = useState("");
   const [touched, setTouched] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (!address && user?.address) {
+      setAddress(user.address);
+    }
+  }, [user, address]);
 
   // =========================
   // CART ITEMS
@@ -190,29 +202,31 @@ export default function Cart({
   // =========================
   // ADDRESS
   // =========================
-  const invalidAddress = touched && !address.trim();
+  const invalidAddress = touched && (address.trim().length < 10 || address.trim().length > 500);
 
   // =========================
   // PLACE ORDER
   // =========================
-  const loadRazorpay = () => new Promise((resolve, reject) => {
-    if (window.Razorpay) return resolve();
-    const script = document.createElement("script");
-    script.src = "https://checkout.razorpay.com/v1/checkout.js";
-    script.onload = resolve; script.onerror = () => reject(new Error("Unable to load secure payment checkout"));
-    document.body.appendChild(script);
-  });
+  const loadRazorpay = () =>
+    new Promise((resolve, reject) => {
+      if (window.Razorpay) return resolve();
+      const script = document.createElement("script");
+      script.src = "https://checkout.razorpay.com/v1/checkout.js";
+      script.onload = resolve;
+      script.onerror = () =>
+        reject(new Error("Unable to load secure payment checkout. Check your internet connection."));
+      document.body.appendChild(script);
+    });
 
   const checkout = async (paymentMethod = "cod") => {
     setTouched(true);
     let createdOrderId = "";
 
-    if (!address.trim()) {
+    if (address.trim().length < 10 || address.trim().length > 500) {
       push({
-        message: "Please enter delivery address.",
+        message: "Please enter a complete delivery address (10–500 characters).",
         variant: "error",
       });
-
       return;
     }
 
@@ -221,21 +235,21 @@ export default function Cart({
         message: "Your cart is empty.",
         variant: "error",
       });
+      return;
+    }
 
+    const token = localStorage.getItem("fz_token");
+
+    if (!token || !user) {
+      push({
+        message: "Please login before placing an order.",
+        variant: "error",
+      });
       return;
     }
 
     try {
-      const token = localStorage.getItem("fz_token");
-
-      if (!token || !user) {
-        push({
-          message: "Please login before placing an order.",
-          variant: "error",
-        });
-
-        return;
-      }
+      setSubmitting(true);
 
       const orderItems = items.map((item) => ({
         foodId: item.item._id,
@@ -244,70 +258,90 @@ export default function Cart({
         addons: item.addons,
       }));
 
-      const response = await fetch(
-        "http://localhost:5000/api/orders",
-        {
-          method: "POST",
-
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-
-          body: JSON.stringify({
-            items: orderItems,
-            address: address.trim(),
-            note,
-            coupon: applied || "",
-            paymentMethod,
-          }),
-        }
-      );
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(
-          data.message || "Failed to place order"
-        );
-      }
+      const data = await api("/orders", {
+        method: "POST",
+        body: JSON.stringify({
+          items: orderItems,
+          address: address.trim(),
+          note,
+          coupon: applied || "",
+          paymentMethod,
+        }),
+      });
 
       createdOrderId = data.order._id;
 
       if (paymentMethod === "online") {
-        await loadRazorpay();
-        const payment = await new Promise((resolve, reject) => {
-          const checkoutWindow = new window.Razorpay({ key: data.payment.keyId, amount: data.payment.amount, currency: data.payment.currency, name: "Swag-e-Swaad", description: `Order #${data.order._id.slice(-6)}`, order_id: data.payment.orderId, handler: resolve, modal: { ondismiss: () => reject(new Error("Payment cancelled")) } });
-          checkoutWindow.open();
+        let payment;
+        if (data.payment?.isMock) {
+          const proceed = window.confirm(
+            `💳 Razorpay Online Payment (Test Simulator)\n\nOrder #${data.order._id.slice(-6)}\nTotal Amount: ₹${data.order.total}\n\nClick OK to simulate successful payment, or Cancel to test payment cancellation.`
+          );
+          if (!proceed) {
+            throw new Error("Payment cancelled by user");
+          }
+          payment = {
+            razorpay_payment_id: `pay_sim_${Date.now()}`,
+            razorpay_order_id: data.payment.orderId,
+            razorpay_signature: "mock_signature_approved",
+          };
+        } else {
+          await loadRazorpay();
+          payment = await new Promise((resolve, reject) => {
+            const checkoutWindow = new window.Razorpay({
+              key: data.payment.keyId,
+              amount: data.payment.amount,
+              currency: data.payment.currency,
+              name: "Swag-e-Swaad",
+              description: `Order #${data.order._id.slice(-6)}`,
+              order_id: data.payment.orderId,
+              handler: resolve,
+              modal: {
+                ondismiss: () => reject(new Error("Payment cancelled")),
+              },
+            });
+            checkoutWindow.open();
+          });
+        }
+
+        await api("/orders/verify-payment", {
+          method: "POST",
+          body: JSON.stringify({ orderId: data.order._id, ...payment }),
         });
-        const verification = await fetch("http://localhost:5000/api/orders/verify-payment", { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` }, body: JSON.stringify({ orderId: data.order._id, ...payment }) });
-        const verified = await verification.json(); if (!verification.ok) throw new Error(verified.message || "Payment could not be verified");
       }
-      push({ message: paymentMethod === "online" ? "Payment verified and order placed! 🎉" : `Order placed successfully! 🎉 Total: ₹${data.order.total}`, variant: "success" });
+
+      push({
+        message:
+          paymentMethod === "online"
+            ? "Payment verified and order placed! 🎉"
+            : `Order placed successfully! 🎉 Total: ₹${data.order.total}`,
+        variant: "success",
+      });
 
       clearCart();
-
       setNote("");
       setAddress("");
       setApplied(null);
       setCode("");
       setTouched(false);
+
+      navigate(`/orders/${data.order._id}`);
     } catch (error) {
       console.error("Place Order Error:", error);
 
       if (paymentMethod === "online" && createdOrderId) {
-        fetch(`http://localhost:5000/api/orders/${createdOrderId}/payment-failed`, {
+        api(`/orders/${createdOrderId}/payment-failed`, {
           method: "PATCH",
-          headers: { "Content-Type": "application/json", Authorization: `Bearer ${localStorage.getItem("fz_token")}` },
           body: JSON.stringify({ reason: error.message || "Payment failed" }),
         }).catch(() => {});
       }
 
       push({
-        message:
-          error.message || "Failed to place order",
+        message: error.message || "Failed to place order",
         variant: "error",
       });
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -339,7 +373,12 @@ export default function Cart({
         )}
       </div>
 
-      {items.length === 0 ? (
+      {foodsLoading && Object.keys(cart).length > 0 ? (
+        <div className="empty">
+          <h3>Loading cart...</h3>
+          <p className="muted">Fetching the latest items and prices.</p>
+        </div>
+      ) : items.length === 0 ? (
         <div className="empty">
           <div className="empty-ill" />
 
@@ -358,13 +397,7 @@ export default function Cart({
           </Link>
         </div>
       ) : (
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "1fr 420px",
-            gap: 20,
-          }}
-        >
+        <div className="cart-layout">
           {/* CART ITEMS */}
           <div className="cart-list">
             {items.map(
@@ -538,7 +571,7 @@ export default function Cart({
 
               {invalidAddress && (
                 <span className="hint error">
-                  Address is required to place the order.
+                  Complete address is required (10–500 characters).
                 </span>
               )}
             </div>
@@ -548,10 +581,17 @@ export default function Cart({
               <button
                 className="btn btn-primary"
                 onClick={() => checkout("cod")}
+                disabled={submitting}
               >
-                Place COD Order
+                {submitting ? "Placing Order..." : "Place COD Order"}
               </button>
-              <button className="btn btn-ghost" onClick={() => checkout("online")}>Pay Online</button>
+              <button
+                className="btn btn-ghost"
+                onClick={() => checkout("online")}
+                disabled={submitting}
+              >
+                {submitting ? "Processing..." : "Pay Online"}
+              </button>
             </div>
           </aside>
         </div>

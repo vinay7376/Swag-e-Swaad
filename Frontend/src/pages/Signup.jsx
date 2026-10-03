@@ -1,6 +1,7 @@
 import React from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useToast } from "../components/Toast";
+import { api } from "../services/api";
 
 export default function Signup({ onSignup }) {
   const { push } = useToast();
@@ -28,13 +29,23 @@ export default function Signup({ onSignup }) {
     }
     try {
       setLoading(true);
-      const response = await fetch("http://localhost:5000/api/auth/register", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: name.trim(), email: email.trim(), password: pass }) });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.message || "Unable to create account");
+      const data = await api("/auth/register", {
+        method: "POST",
+        body: JSON.stringify({
+          name: name.trim(),
+          email: email.trim(),
+          password: pass,
+        }),
+      });
+      localStorage.setItem("fz_token", data.token);
       onSignup(data.user, data.token);
       push({ message: "Account created! 🎉 Logged in.", variant: "success" });
       navigate("/", { replace: true });
-    } catch (error) { push({ message: error.message, variant: "error" }); } finally { setLoading(false); }
+    } catch (error) {
+      push({ message: error.message, variant: "error" });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (

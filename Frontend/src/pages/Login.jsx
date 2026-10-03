@@ -1,6 +1,7 @@
 import React from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useToast } from "../components/Toast";
+import { api } from "../services/api";
 
 export default function Login({ onLogin }) {
   const { push } = useToast();
@@ -38,27 +39,13 @@ export default function Login({ onLogin }) {
       // =========================
       // LOGIN API
       // =========================
-      const response = await fetch(
-        "http://localhost:5000/api/auth/login",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            email: email.trim(),
-            password,
-          }),
-        }
-      );
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(
-          data.message || "Login failed"
-        );
-      }
+      const data = await api("/auth/login", {
+        method: "POST",
+        body: JSON.stringify({
+          email: email.trim(),
+          password,
+        }),
+      });
 
       // =========================
       // SAVE JWT TOKEN

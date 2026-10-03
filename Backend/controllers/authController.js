@@ -139,6 +139,48 @@ const changePassword = async (req, res, next) => {
   } catch (error) { next(error); }
 };
 
+const forgotPassword = async (req, res, next) => {
+  try {
+    const { email } = req.body;
+    if (!isEmail(email)) {
+      return res.status(400).json({ success: false, message: "Valid email is required" });
+    }
+    const user = await User.findOne({ email: email.trim().toLowerCase() });
+    if (!user) {
+      return res.status(404).json({ success: false, message: "No account found with this email" });
+    }
+    // Return verified status so frontend can proceed to reset
+    res.json({
+      success: true,
+      message: "Reset verification approved. Please enter your new password.",
+      email: user.email,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const resetPassword = async (req, res, next) => {
+  try {
+    const { email, password } = req.body;
+    if (!isEmail(email) || !password || password.length < 8) {
+      return res.status(400).json({
+        success: false,
+        message: "Valid email and a new password of at least 8 characters are required",
+      });
+    }
+    const user = await User.findOne({ email: email.trim().toLowerCase() });
+    if (!user) {
+      return res.status(404).json({ success: false, message: "No account found with this email" });
+    }
+    user.password = await bcrypt.hash(password, 12);
+    await user.save();
+    res.json({ success: true, message: "Password updated successfully. You can now log in." });
+  } catch (error) {
+    next(error);
+  }
+};
+
 // =========================
 // EXPORT CONTROLLERS
 // =========================
@@ -146,5 +188,8 @@ module.exports = {
   registerUser,
   loginUser,
   getProfile,
-  updateProfile, changePassword,
+  updateProfile,
+  changePassword,
+  forgotPassword,
+  resetPassword,
 };

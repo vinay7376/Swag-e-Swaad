@@ -18,7 +18,25 @@ const adminRoutes = require("./routes/adminRoutes");
 const { notFound, errorHandler } = require("./middleware/errorMiddleware");
 
 const app = express();
-app.use(cors({ origin: process.env.CLIENT_URL ? process.env.CLIENT_URL.split(",") : true, methods: ["GET", "POST", "PUT", "PATCH", "DELETE"] }));
+
+const rawOrigins = process.env.CLIENT_URL ? process.env.CLIENT_URL.split(",").map((s) => s.trim()) : [];
+const defaultOrigins = ["http://localhost:3000", "http://127.0.0.1:3000", "http://localhost:5173", "https://swag-e-swaad.vercel.app"];
+const allowedOrigins = Array.from(new Set([...defaultOrigins, ...rawOrigins]));
+
+app.use(
+  cors({
+    origin: function (origin, callback) {
+      if (!origin) return callback(null, true);
+      if (allowedOrigins.includes(origin) || /^https:\/\/.*swag-e-swaad.*\.vercel\.app$/.test(origin) || /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin)) {
+        return callback(null, true);
+      }
+      return callback(new Error(`CORS blocked for origin: ${origin}`));
+    },
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+  })
+);
 app.use(express.json({ limit: "100kb" }));
 app.use("/api/auth", authRoutes);
 app.use("/api/foods", foodRoutes);

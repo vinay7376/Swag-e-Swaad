@@ -40,11 +40,43 @@ exports.createOrder = async (req, res, next) => {
     const totals = calculateTotals(subtotal, req.body.coupon);
     const order = await Order.create({ user: req.user._id, items: orderItems, subtotal, ...totals, address, note: String(req.body.note || "").trim().slice(0, 500), paymentMethod, paymentStatus: "pending" });
     if (paymentMethod === "online") {
+      const isPlaceholder =
+        !process.env.RAZORPAY_KEY_ID ||
+        process.env.RAZORPAY_KEY_ID.includes("ABC123456789") ||
+        !process.env.RAZORPAY_KEY_SECRET ||
+        process.env.RAZORPAY_KEY_SECRET.includes("XYZ987654321");
+
+      if (isPlaceholder) {
+        // Safe simulator mode for development testing without real Razorpay account
+        const mockOrderId = `order_sim_${Date.now()}`;
+        order.payment.providerOrderId = mockOrderId;
+        await order.save();
+        return res.status(201).json({
+          success: true,
+          message: "Payment order created (Simulator Mode)",
+          order,
+          payment: {
+            isMock: true,
+            keyId: "rzp_test_simulator",
+            orderId: mockOrderId,
+            amount: order.total * 100,
+            currency: "INR",
+          },
+        });
+      }
+
       const razorpay = getRazorpay();
       if (!razorpay) return res.status(503).json({ success: false, message: "Online payments are not configured" });
-      const gatewayOrder = await razorpay.orders.create({ amount: order.total * 100, currency: "INR", receipt: String(order._id) });
-      order.payment.providerOrderId = gatewayOrder.id; await order.save();
-      return res.status(201).json({ success: true, message: "Payment order created", order, payment: { keyId: process.env.RAZORPAY_KEY_ID, orderId: gatewayOrder.id, amount: gatewayOrder.amount, currency: gatewayOrder.currency } });
+      try {
+        const gatewayOrder = await razorpay.orders.create({ amount: order.total * 100, currency: "INR", receipt: String(order._id) });
+        order.payment.providerOrderId = gatewayOrder.id;
+        await order.save();
+        return res.status(201).json({ success: true, message: "Payment order created", order, payment: { isMock: false, keyId: process.env.RAZORPAY_KEY_ID, orderId: gatewayOrder.id, amount: gatewayOrder.amount, currency: gatewayOrder.currency } });
+      } catch (gatewayError) {
+        await Order.findByIdAndDelete(order._id);
+        const reason = gatewayError.error?.description || gatewayError.message || "Failed to initialize payment gateway";
+        return res.status(502).json({ success: false, message: `Payment gateway error: ${reason}. Please verify Razorpay API keys or select Cash on Delivery.` });
+      }
     }
     res.status(201).json({ success: true, message: "Order placed successfully", order });
   } catch (error) { next(error); }
@@ -57,6 +89,15 @@ exports.verifyPayment = async (req, res, next) => {
     if (!order) return res.status(404).json({ success: false, message: "Order not found" });
     if (order.paymentStatus === "paid") return res.json({ success: true, message: "Payment already verified", order });
     if (order.payment.providerOrderId !== gatewayOrderId) return res.status(400).json({ success: false, message: "Payment order does not match" });
+
+    // Handle simulator mode signature verification
+    if (gatewayOrderId.startsWith("order_sim_") && signature === "mock_signature_approved") {
+      order.paymentStatus = "paid";
+      order.payment.paymentId = paymentId;
+      await order.save();
+      return res.json({ success: true, message: "Payment verified (Simulator Mode)", order });
+    }
+
     const expected = crypto.createHmac("sha256", process.env.RAZORPAY_KEY_SECRET).update(`${gatewayOrderId}|${paymentId}`).digest("hex");
     if (!crypto.timingSafeEqual(Buffer.from(expected), Buffer.from(signature))) return res.status(400).json({ success: false, message: "Payment signature verification failed" });
     order.paymentStatus = "paid"; order.payment.paymentId = paymentId; await order.save();

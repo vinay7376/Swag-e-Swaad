@@ -5,7 +5,7 @@ async function connectDB(uri) {
     throw new Error("MONGODB_URI is missing. Create Backend/.env from Backend/.env.example and set a valid MongoDB connection string.");
   }
   try {
-    await mongoose.connect(uri, { serverSelectionTimeoutMS: 5000 });
+    await mongoose.connect(uri, { serverSelectionTimeoutMS: 15000 });
     console.log(`MongoDB connected: ${mongoose.connection.host}/${mongoose.connection.name}`);
   } catch (error) {
     const hint = /ECONNREFUSED|Server selection timed out/i.test(error.message)

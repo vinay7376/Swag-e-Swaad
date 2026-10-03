@@ -12,12 +12,12 @@ export default function CartItem({ item, qty, unitPrice, subtitle, onIncrease, o
         {subtitle && <p className="muted" style={{ margin: 0 }}>{subtitle}</p>}
 
         <div className="cart-actions">
-          <div className=" btn btn-ghost qty-controls">
-            <button onClick={() => onDecrease(variantKey)}>-</button>
-            <span>{qty}</span>
-            <button onClick={() => onIncrease(variantKey)}>+</button>
+          <div className="qty-controls">
+            <button type="button" onClick={() => onDecrease(variantKey)} aria-label="Decrease quantity">-</button>
+            <span className="qty-number">{qty}</span>
+            <button type="button" onClick={() => onIncrease(variantKey)} aria-label="Increase quantity">+</button>
           </div>
-          <button className="btn btn-ghost" onClick={() => onRemove(variantKey)}>Remove</button>
+          <button type="button" className="btn btn-ghost sm remove-btn" onClick={() => onRemove(variantKey)}>Remove</button>
         </div>
       </div>
 

@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-
-const API_URL = "http://localhost:5000/api/orders";
+import { api } from "../services/api";
 
 export default function OrderDetails() {
   const { id } = useParams();
@@ -19,24 +18,7 @@ export default function OrderDetails() {
           throw new Error("Please login to view this order.");
         }
 
-        const response = await fetch(
-          `${API_URL}/${id}`,
-          {
-            method: "GET",
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
-
-        const data = await response.json();
-
-        if (!response.ok) {
-          throw new Error(
-            data.message || "Failed to fetch order"
-          );
-        }
-
+        const data = await api(`/orders/${id}`);
         setOrder(data.order);
       } catch (err) {
         console.error("Order Details Error:", err);
